@@ -1,13 +1,15 @@
 const express = require('express');
 const path = require('path');
 const exphbs = require('express-handlebars');
+const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const session = require('express-session');
 const cookieParser = require('cookie-parser');
 const passport = require('passport');
 
 // Load User model
-require('./model/User')
+require('./model/User');
+require('./model/Story');
 
 // Passport Config
 require('./config/passport')(passport);
@@ -22,15 +24,32 @@ const stories = require('./route/stories');
 mongoose.Promise = global.Promise;
 // Connect to mongoose
 const db = require('./config/key');
+
+const {
+    truncate,
+    stripTags,
+    formatDate
+} = require('./helper/hbs');
+
 mongoose.connect(db.mongoURI, {
         useMongoClient: true
     }).then(() => console.log('MongoDB Connected...'))
     .catch(err => console.log(err));
 
+
+
 const app = express();
+
+
+
 
 // Handlebars Middleware
 app.engine('handlebars', exphbs({
+    helpers:{
+        truncate: truncate,
+        stripTags: stripTags,
+        formatDate:formatDate
+    },
     defaultLayout: 'main'
 }));
 
@@ -48,13 +67,22 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
+
+// parse application/x-www-form-urlencoded
+app.use(bodyParser.urlencoded({
+    extended: false
+}));
+
+// parse application/json
+app.use(bodyParser.json());
+
 // Set global vars
 app.use((req, res, next) => {
     res.locals.user = req.user || null;
     next();
 });
 
-app.use(express.static(path.join(__dirname,'public')))
+app.use(express.static(path.join(__dirname, 'public')))
 
 app.use('/', index);
 app.use('/auth', auth);
