@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
 const exphbs = require('express-handlebars');
+const methodOverride = require('method-override');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const session = require('express-session');
@@ -28,7 +29,9 @@ const db = require('./config/key');
 const {
     truncate,
     stripTags,
-    formatDate
+    formatDate,
+    select,
+    editIcon
 } = require('./helper/hbs');
 
 mongoose.connect(db.mongoURI, {
@@ -45,10 +48,12 @@ const app = express();
 
 // Handlebars Middleware
 app.engine('handlebars', exphbs({
-    helpers:{
+    helpers: {
         truncate: truncate,
         stripTags: stripTags,
-        formatDate:formatDate
+        formatDate: formatDate,
+        select: select,
+        editIcon: editIcon
     },
     defaultLayout: 'main'
 }));
@@ -75,6 +80,10 @@ app.use(bodyParser.urlencoded({
 
 // parse application/json
 app.use(bodyParser.json());
+
+
+// Method override middleware
+app.use(methodOverride('_method'));
 
 // Set global vars
 app.use((req, res, next) => {
